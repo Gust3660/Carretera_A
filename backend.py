@@ -86,17 +86,26 @@ coord: Dict[str, Tuple[float, float]] = {
 # DISTANCIA GEOGRÁFICA
 # =========================
 
-def geodist(lat1: float, lon1: float,
-            lat2: float, lon2: float) -> float:
+def geodist(
+        lat1: float,
+        lon1: float,
+        lat2: float,
+        lon2: float
+) -> float:
 
     lat1r = radians(lat1)
     lon1r = radians(lon1)
+
     lat2r = radians(lat2)
     lon2r = radians(lon2)
 
     val = (
         (sin(lat1r) * sin(lat2r)) +
-        (cos(lat1r) * cos(lat2r) * cos(lon1r - lon2r))
+        (
+            cos(lat1r) *
+            cos(lat2r) *
+            cos(lon1r - lon2r)
+        )
     )
 
     val = max(-1.0, min(1.0, val))
@@ -110,12 +119,22 @@ def geodist(lat1: float, lon1: float,
 # FUNCIÓN HEURÍSTICA
 # =========================
 
-def f_cost(nodo: Nodo, meta: str) -> float:
+def f_cost(
+        nodo: Nodo,
+        meta: str
+) -> float:
 
     lat1, lon1 = coord[nodo.get_datos()]
     lat2, lon2 = coord[meta]
 
-    d = int(geodist(lat1, lon1, lat2, lon2))
+    d = int(
+        geodist(
+            lat1,
+            lon1,
+            lat2,
+            lon2
+        )
+    )
 
     return nodo.get_costo() + d
 
@@ -139,10 +158,14 @@ def buscar_solucion_USC(
 
     nodos_frontera.append(nodo_inicial)
 
-    while (not solucionado) and nodos_frontera:
+    while (
+        not solucionado
+        and nodos_frontera
+    ):
 
         nodos_frontera.sort(
-            key=lambda nodo: f_cost(nodo, solucion)
+            key=lambda nodo:
+            f_cost(nodo, solucion)
         )
 
         nodo = nodos_frontera.pop(0)
@@ -150,7 +173,9 @@ def buscar_solucion_USC(
         nodos_visitados.append(nodo)
 
         if nodo.get_datos() == solucion:
+
             solucionado = True
+
             return nodo
 
         dato_nodo = nodo.get_datos()
@@ -161,7 +186,9 @@ def buscar_solucion_USC(
 
             hijo = Nodo(un_hijo)
 
-            costo = conexiones[dato_nodo][un_hijo]
+            costo = conexiones[
+                dato_nodo
+            ][un_hijo]
 
             hijo.set_costo(
                 nodo.get_costo() + costo
@@ -171,22 +198,31 @@ def buscar_solucion_USC(
 
             lista_hijos.append(hijo)
 
-            if not hijo.en_lista(nodos_visitados):
+            if not hijo.en_lista(
+                nodos_visitados
+            ):
 
-                if hijo.en_lista(nodos_frontera):
+                if hijo.en_lista(
+                    nodos_frontera
+                ):
 
                     for n in nodos_frontera:
 
                         if (
                             n.igual(hijo)
-                            and n.get_costo() > hijo.get_costo()
+                            and
+                            n.get_costo()
+                            > hijo.get_costo()
                         ):
 
                             nodos_frontera.remove(n)
+
                             nodos_frontera.append(hijo)
+
                             break
 
                 else:
+
                     nodos_frontera.append(hijo)
 
         nodo.set_hijos(lista_hijos)
@@ -209,83 +245,26 @@ def get_route(
 
     while nodo.get_padre() is not None:
 
-        resultado.append(nodo.get_datos())
+        resultado.append(
+            nodo.get_datos()
+        )
 
         nodo = nodo.get_padre()
 
     resultado.append(estado_inicial)
 
-    return list(reversed(resultado))
+    resultado.reverse()
+
+    return resultado
 
 
 # =========================
-# BUSCAR RUTA
+# OBTENER NODOS
 # =========================
 
-def search_route(
-        estado_inicial: str,
-        solucion: str
-) -> Dict[str, Optional[object]]:
+def get_nodes():
 
-    if estado_inicial not in conexiones:
-        return {
-            'route': None,
-            'cost': None,
-            'error': 'Ciudad inicial no existe'
-        }
-
-    if solucion not in conexiones:
-        return {
-            'route': None,
-            'cost': None,
-            'error': 'Ciudad destino no existe'
-        }
-
-    nodo_solucion = buscar_solucion_USC(
-        estado_inicial,
-        solucion
-    )
-
-    if nodo_solucion is None:
-        return {
-            'route': None,
-            'cost': None,
-            'error': 'No existe ruta'
-        }
-
-    ruta = get_route(
-        nodo_solucion,
-        estado_inicial
-    )
-
-    return {
-        'route': ruta,
-        'cost': nodo_solucion.get_costo(),
-        'error': None
-    }
-
-
-# =========================
-# LISTAR NODOS
-# =========================
-
-def get_nodes() -> List[str]:
-    return sorted(conexiones.keys())
-
-
-# =========================
-# OBTENER COORDENADAS
-# =========================
-
-def get_coordinates_for_route(
-        route: List[str]
-) -> List[Tuple[str, float, float]]:
-
-    return [
-        (node, coord[node][0], coord[node][1])
-        for node in route
-        if node in coord
-    ]
+    return list(coord.keys())
 
 
 # =========================
@@ -294,15 +273,25 @@ def get_coordinates_for_route(
 
 def agregar_ciudad(
         nombre: str,
-        lat: float,
-        lon: float
+        latitud: float,
+        longitud: float
 ) -> bool:
 
-    if nombre in conexiones:
+    global coord
+    global conexiones
+
+    nombre = nombre.strip()
+
+    if nombre in coord:
+
         return False
 
+    coord[nombre] = (
+        latitud,
+        longitud
+    )
+
     conexiones[nombre] = {}
-    coord[nombre] = (lat, lon)
 
     return True
 
@@ -318,38 +307,50 @@ def agregar_ruta(
         bidireccional: bool = True
 ) -> bool:
 
-    if origen not in conexiones:
+    global conexiones
+
+    try:
+
+        if origen not in conexiones:
+
+            conexiones[origen] = {}
+
+        conexiones[origen][destino] = costo
+
+        if bidireccional:
+
+            if destino not in conexiones:
+
+                conexiones[destino] = {}
+
+            conexiones[destino][origen] = costo
+
+        return True
+
+    except Exception:
+
         return False
-
-    if destino not in conexiones:
-        return False
-
-    conexiones[origen][destino] = costo
-
-    if bidireccional:
-        conexiones[destino][origen] = costo
-
-    return True
 
 
 # =========================
 # GUARDAR DATOS
 # =========================
 
-ARCHIVO = "rutas.json"
-
-
 def guardar_datos():
 
-    data = {
-        "conexiones": conexiones,
-        "coord": coord
+    datos = {
+        "coord": coord,
+        "conexiones": conexiones
     }
 
-    with open(ARCHIVO, "w", encoding="utf-8") as archivo:
+    with open(
+        "datos.json",
+        "w",
+        encoding="utf-8"
+    ) as archivo:
 
         json.dump(
-            data,
+            datos,
             archivo,
             indent=4,
             ensure_ascii=False
@@ -362,63 +363,69 @@ def guardar_datos():
 
 def cargar_datos():
 
-    global conexiones
     global coord
+    global conexiones
 
-    if not os.path.exists(ARCHIVO):
-        return
+    if os.path.exists("datos.json"):
 
-    with open(ARCHIVO, "r", encoding="utf-8") as archivo:
+        with open(
+            "datos.json",
+            "r",
+            encoding="utf-8"
+        ) as archivo:
 
-        data = json.load(archivo)
+            datos = json.load(archivo)
 
-        conexiones = data["conexiones"]
+            conexiones = datos.get(
+                "conexiones",
+                conexiones
+            )
 
-        coord = {
-            k: tuple(v)
-            for k, v in data["coord"].items()
+            coord_json = datos.get(
+                "coord",
+                {}
+            )
+
+            coord = {
+                k: tuple(v)
+                for k, v in coord_json.items()
+            }
+
+
+# =========================
+# BUSCAR RUTA
+# =========================
+
+def search_route(
+        origen: str,
+        destino: str
+):
+
+    nodo_solucion = buscar_solucion_USC(
+        origen,
+        destino
+    )
+
+    if nodo_solucion is None:
+
+        return {
+            "route": None,
+            "cost": None
         }
 
+    ruta = get_route(
+        nodo_solucion,
+        origen
+    )
+
+    return {
+        "route": ruta,
+        "cost": nodo_solucion.get_costo()
+    }
+
 
 # =========================
-# EJEMPLO DE USO
+# INICIALIZAR DATOS
 # =========================
 
-if __name__ == "__main__":
-
-    cargar_datos()
-
-    print("\nCIUDADES DISPONIBLES:\n")
-    print(get_nodes())
-
-    print("\nAGREGANDO NUEVA CIUDAD...\n")
-
-    agregar_ciudad(
-        "PUEBLA",
-        19.0412967,
-        -98.2061996
-    )
-
-    agregar_ruta(
-        "CDMX",
-        "PUEBLA",
-        130
-    )
-
-    agregar_ruta(
-        "QRO",
-        "PUEBLA",
-        280
-    )
-
-    guardar_datos()
-
-    print("\nBUSCANDO RUTA...\n")
-
-    resultado = search_route(
-        "Jiloyork",
-        "PUEBLA"
-    )
-
-    print(resultado)
-    
+cargar_datos()
