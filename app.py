@@ -5,7 +5,7 @@ import backend
 
 st.set_page_config(page_title="Carretera A", layout="wide")
 st.title("Carretera A - Buscador de rutas")
-st.write("Interfaz de Streamlit para encontrar rutas en el grafo de carreteras.")
+st.write("Interfaz de usuario para encontrar rutas en el grafo de carreteras.")
 
 with st.sidebar:
     st.header("Configuración")
